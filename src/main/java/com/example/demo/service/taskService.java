@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.model.aetos;
 import com.example.demo.model.requester;
-import com.example.demo.model.requesterDto;
 import com.example.demo.model.task;
 import com.example.demo.repository.aetosRepository;
 import com.example.demo.repository.requesterRepository;
@@ -12,9 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.net.http.HttpResponse;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class taskService {
