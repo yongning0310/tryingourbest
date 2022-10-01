@@ -39,7 +39,7 @@ public class taskService {
 
     public ResponseEntity<?> authoriseRequest(Long task_id){
         Optional<task> task_found = taskRepository.findById(task_id);
-        if (!task_found.isEmpty()){
+        if (task_found!=null){
             task task_to_update = task_found.get();
             task_to_update.setAuthorised(true);
             taskRepository.save(task_to_update);
@@ -79,10 +79,10 @@ public class taskService {
         Optional<task> task_found = taskRepository.findById(task_id);
         Optional<requester> cso_found = requesterRepository.findById(cso_id);
         Optional<requester> do_found = requesterRepository.findById(do_id);
-        if (!task_found.isEmpty()
+        if (task_found!=null
                 && !task_found.get().getValidated()
-                && !cso_found.isEmpty()
-                && !do_found.isEmpty()){
+                && cso_found!=null
+                && do_found!=null){
             task task_to_update = task_found.get();
             task_to_update.setValidated(true);
             task_to_update.setAuthorisedBy(cso_found.get());
@@ -102,7 +102,7 @@ public class taskService {
     public ResponseEntity<?> verifyTask(Long task_id, Long aetos_id){
         Optional<task> task_found = taskRepository.findById(task_id);
         Optional<aetos> aetos_found = aetosRepository.findById(aetos_id);
-        if (!task_found.isEmpty() && !aetos_found.isEmpty() ){
+        if (task_found!=null && aetos_found!=null ){
             task task_to_update = task_found.get();
             task_to_update.setVerified(true);
             //task_to_update.setTime_verified(datetime.now());

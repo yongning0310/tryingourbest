@@ -17,7 +17,7 @@ public class aetosService {
     public ResponseEntity<?> verify(aetos verify_aetos) {
         Optional<aetos> found_aetos = aetosRepository
                 .findByUsernameEquals(verify_aetos.getUsername());
-        if (!found_aetos.isEmpty()) {
+        if (found_aetos!=null) {
             if (Objects.equals(found_aetos.get().getPassword(), verify_aetos.getPassword())) {
                 return new ResponseEntity<>(found_aetos.get().getId(),HttpStatus.OK);
             }
