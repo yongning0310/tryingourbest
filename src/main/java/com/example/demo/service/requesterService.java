@@ -29,7 +29,7 @@ public class requesterService {
     public ResponseEntity<?> verify_DO(requester verify_requester){
         Optional <requester> found_requester = requesterRepository
                 .findByUsernameEquals(verify_requester.getUsername());
-        if (!found_requester.isEmpty()) {
+        if (found_requester!=null) {
             if (Objects.equals(found_requester.get().getPassword(), verify_requester.getPassword())) {
                 if (found_requester.get().getDesignated_officer()){
                     return new ResponseEntity<>(found_requester.get().getId(), HttpStatus.OK);
