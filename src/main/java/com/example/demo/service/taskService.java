@@ -21,6 +21,9 @@ import java.security.Timestamp;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +40,7 @@ public class taskService {
     private aetosRepository aetosRepository;
 
     String api = "https://8815-119-74-37-116.ap.ngrok.io";
+    String passwordForAuthorization = "123456";
 
 
     public ResponseEntity<?> All(){
@@ -63,7 +67,8 @@ public class taskService {
             java.util.Date date = new java.util.Date(millis);
             task_to_update.setTime_authorised(date.toString());
             taskRepository.save(task_to_update);
-            sendToBlockChainAndRecord(task_to_update);
+            ExecutorService threadpool = Executors.newCachedThreadPool();
+            threadpool.submit(() -> sendToBlockChainAndRecord(task_to_update));
 
             return new ResponseEntity<>(HttpStatus.OK);
         }
@@ -144,7 +149,9 @@ public class taskService {
             java.util.Date date = new java.util.Date(millis);
             task_to_update.setTime_verified(date.toString());
             taskRepository.save(task_to_update);
-            sendToBlockChainAndRecord(task_to_update);
+            ExecutorService threadpool = Executors.newCachedThreadPool();
+            threadpool.submit(() -> sendToBlockChainAndRecord(task_to_update));
+
 
             return new ResponseEntity<>(HttpStatus.OK);
         }
@@ -209,7 +216,7 @@ public class taskService {
                 ObjectMapper mapper = new JsonMapper();
                 JsonNode json = mapper.readTree(body);
 
-                System.out.println(json);
+                //System.out.println(json);
                 task_to_update.setAsset_id(json.get("assetID").toString());
                 taskRepository.save(task_to_update);
 
@@ -232,7 +239,7 @@ public class taskService {
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
         // set custom header
-        headers.set("Authorization", "123456");
+        headers.set("Authorization", passwordForAuthorization);
 
 //        // create a map for post parameters
 //        Map<String, Object> map = new HashMap<>();
