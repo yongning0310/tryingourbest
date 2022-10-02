@@ -37,7 +37,7 @@ public class taskService {
     @Autowired
     private Environment environment;
 
-    String api = "https://c37b-119-74-37-116.ap.ngrok.io";
+    String api = "https://4176-119-74-37-116.ap.ngrok.io";
     String passwordForAuthorization = "123456";
 
 
