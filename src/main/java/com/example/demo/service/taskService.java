@@ -6,8 +6,13 @@ import com.example.demo.model.task;
 import com.example.demo.repository.aetosRepository;
 import com.example.demo.repository.requesterRepository;
 import com.example.demo.repository.taskRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
@@ -16,8 +21,10 @@ import java.security.Timestamp;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@EnableAsync
 public class taskService {
 
     @Autowired
@@ -28,6 +35,8 @@ public class taskService {
 
     @Autowired
     private aetosRepository aetosRepository;
+
+    String api = "https://8815-119-74-37-116.ap.ngrok.io";
 
 
     public ResponseEntity<?> All(){
@@ -42,28 +51,23 @@ public class taskService {
                         requester_id).stream().map(task -> task.toDto()), HttpStatus.OK);
 
     }
-
+    //@Async("threadPoolTaskExecutor")
     public ResponseEntity<?> authoriseRequest(Long task_id){
         Optional<task> task_found = taskRepository.findById(task_id);
-        if (task_found!=null  && !task_found.get().getAuthorised()){
+        if (task_found!=null
+                && !task_found.get().getAuthorised()
+                && task_found.get().getValidated() ){
             task task_to_update = task_found.get();
             task_to_update.setAuthorised(true);
             long millis = System.currentTimeMillis();
             java.util.Date date = new java.util.Date(millis);
             task_to_update.setTime_authorised(date.toString());
             taskRepository.save(task_to_update);
-//            ResponseEntity<String> response = createPost(task_to_update,
-//                    "https://fef2-119-74-37-116.ap.ngrok.io/mint");
-//            if (response!=null){
-//                String assest_id = response.getBody();
-//                task_to_update.setAssest_id(assest_id);
-//                taskRepository.save(task_to_update);
-//            }else{
-//                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//            }
+            sendToBlockChainAndRecord(task_to_update);
 
             return new ResponseEntity<>(HttpStatus.OK);
         }
+        //System.out.println(task_id);
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
@@ -84,15 +88,15 @@ public class taskService {
         task_to_save.setVerified(false);
         task_to_save.setValidated(false);
         task_to_save.setAuthorised(false);
-        task_to_save.setAttachments("insert urls");
+        task_to_save.setAttachments(createTask.getAttachments());
         task_to_save.setCreatedBy(requesterRepository.findById(requester_id).get());
         return new ResponseEntity<>(taskRepository.save(task_to_save).toDto(), HttpStatus.OK);
     }
 
     public ResponseEntity<?> unvalidatedRequest(Long requester_id){
         return new ResponseEntity<>(taskRepository.
-                getByCreatedBy_IdLessThanOrCreatedBy_IdGreaterThanAndValidatedFalse
-                        (requester_id,requester_id).stream().map
+                findByCreatedBy_IdNotAndValidatedFalse
+                        (requester_id).stream().map
                         (task -> task.toDto()), HttpStatus.OK);
 
     }
@@ -140,16 +144,7 @@ public class taskService {
             java.util.Date date = new java.util.Date(millis);
             task_to_update.setTime_verified(date.toString());
             taskRepository.save(task_to_update);
-
-//            ResponseEntity<String> response = createPost(task_to_update,
-//                    "https://fef2-119-74-37-116.ap.ngrok.io/mint");
-//            if (response!=null){
-//                String assest_id = response.getBody();
-//                task_to_update.setAssest_id(assest_id);
-//                taskRepository.save(task_to_update);
-//            }else{
-//                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//            }
+            sendToBlockChainAndRecord(task_to_update);
 
             return new ResponseEntity<>(HttpStatus.OK);
         }
@@ -176,21 +171,54 @@ public class taskService {
     }
 
     public ResponseEntity<?> checkBlockChain(Long task_id){
-        Optional<task> task_found = taskRepository.findById(task_id);
-        if (task_found!=null) {
-            String assest_id = task_found.get().getAssest_id();
-            task task_to_send = task_found.get();
-            task_to_send.setAssest_id(null);
-            ResponseEntity<String> response = createPost(task_to_send,
-                    "https://fef2-119-74-37-116.ap.ngrok.io/retrieve/"+assest_id);
-            if (response!=null){
-                Boolean is_in_blockchain = response.getBody().contains("true");
-                if (is_in_blockchain){
-                    return new ResponseEntity<>(HttpStatus.OK);
+        try {
+            Optional<task> task_found = taskRepository.findById(task_id);
+            if (task_found != null) {
+                String assest_id = task_found.get().getAsset_id();
+                task task_to_send = task_found.get();
+                task_to_send.setAsset_id(null);
+                Map<String, Object> map = new HashMap<>();
+                map.put("metadatafile", task_to_send);
+                map.put("asset_id", assest_id);
+                ResponseEntity<String> response = createPost(map,
+                        api + "/check");
+                if (response != null) {
+                    Boolean is_in_blockchain = response.getBody().contains("true");
+                    if (is_in_blockchain) {
+                        return new ResponseEntity<>(HttpStatus.OK);
+                    }
                 }
             }
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }catch (Exception e){
+            System.out.println(e);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+    //@Async
+    public void sendToBlockChainAndRecord(task task_to_update) {
+        try {
+            Map<String, Object> map = new HashMap<>();
+            map.put("metadatafile", task_to_update);
+            map.put("pon_id",task_to_update.getId().toString());
+            ResponseEntity<String> response = createPost(map,
+                    api + "/mint");
+            if (response != null) {
+                String body = response.getBody();
+                ObjectMapper mapper = new JsonMapper();
+                JsonNode json = mapper.readTree(body);
+
+                System.out.println(json);
+                task_to_update.setAsset_id(json.get("assetID").toString());
+                taskRepository.save(task_to_update);
+
+                System.out.println("Execute method asynchronously. "
+                        + Thread.currentThread().getName());
+            }
+        }catch (Exception e){
+            System.out.println(e);
+        }
     }
 
     public ResponseEntity<String> createPost(Object body, String api) {
@@ -220,7 +248,7 @@ public class taskService {
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
         System.out.println(response);
         // check response status code
-        if (response.getStatusCode() == HttpStatus.OK) {
+        if (response.getStatusCode() == HttpStatus.CREATED) {
             return response;
         } else {
             return null;
@@ -230,3 +258,4 @@ public class taskService {
 
 
 }
+

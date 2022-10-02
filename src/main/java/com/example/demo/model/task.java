@@ -21,8 +21,8 @@ public class task {
     //@Column(name = "id", nullable = false)
     private Long id;
 
-    //@Column(name="assest_id")
-    private String assest_id;
+    //@Column(name="asset_id")
+    private String asset_id;
 
     //@Column(name="company_name")
     private String company_name;
@@ -75,7 +75,7 @@ public class task {
     public taskDto toDto(){
         if(this.validatedBy == null) {
             return new taskDto(this.id,
-                    this.assest_id,
+                    this.asset_id,
                     this.company_name,
                     this.vehicle_no,
                     this.driver_name,
@@ -94,7 +94,7 @@ public class task {
                     null);
         }else if(this.authorisedBy == null){
             return new taskDto(this.id,
-                    this.assest_id,
+                    this.asset_id,
                     this.company_name,
                     this.vehicle_no,
                     this.driver_name,
@@ -113,7 +113,7 @@ public class task {
                     null);
         }else if(this.verifiedBy == null){
             return new taskDto(this.id,
-                    this.assest_id,
+                    this.asset_id,
                     this.company_name,
                     this.vehicle_no,
                     this.driver_name,
@@ -132,7 +132,7 @@ public class task {
                     null);
         }else{
             return new taskDto(this.id,
-                    this.assest_id,
+                    this.asset_id,
                     this.company_name,
                     this.vehicle_no,
                     this.driver_name,

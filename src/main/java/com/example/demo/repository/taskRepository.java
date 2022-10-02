@@ -8,11 +8,11 @@ import java.util.List;
 public interface taskRepository extends JpaRepository<task,Long> {
     List<task> findByAuthorisedBy_IdEqualsAndAuthorisedFalse(Long id);
 
+    List<task> findByCreatedBy_IdNotAndValidatedFalse(Long id);
+
+
     List<task> findByCreatedBy_IdEqualsAndVerifiedFalse(Long id);
 
-    List<task> getByCreatedBy_IdLessThanOrCreatedBy_IdGreaterThanAndValidatedFalse(Long id, Long id1);
-    
-    
     List<task> findByVerifiedFalseAndAuthorisedTrue();
 
 

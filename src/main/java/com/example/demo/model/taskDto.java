@@ -21,8 +21,8 @@ public class taskDto {
     //@Column(name = "id", nullable = false)
     private Long id;
 
-    //@Column(name="assest_id")
-    private String assest_id;
+    //@Column(name="asset_id")
+    private String asset_id;
 
     //@Column(name="company_name")
     private String company_name;
