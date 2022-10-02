@@ -7,11 +7,15 @@ import com.example.demo.repository.aetosRepository;
 import com.example.demo.repository.requesterRepository;
 import com.example.demo.repository.taskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
+import java.security.Timestamp;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.*;
 
 @Service
 public class taskService {
@@ -25,24 +29,39 @@ public class taskService {
     @Autowired
     private aetosRepository aetosRepository;
 
+
     public ResponseEntity<?> All(){
         return new ResponseEntity<>(taskRepository
-                .findAll(), HttpStatus.OK);
+                .findAll().stream().map(task -> task.toDto()), HttpStatus.OK);
 
     }
 
     public ResponseEntity<?> getAllTasks(Long requester_id){
         return new ResponseEntity<>(taskRepository
-                .findByAuthorisedBy_IdEqualsAndAuthorisedFalse(requester_id), HttpStatus.OK);
+                .findByAuthorisedBy_IdEqualsAndAuthorisedFalse(
+                        requester_id).stream().map(task -> task.toDto()), HttpStatus.OK);
 
     }
 
     public ResponseEntity<?> authoriseRequest(Long task_id){
         Optional<task> task_found = taskRepository.findById(task_id);
-        if (task_found!=null){
+        if (task_found!=null  && !task_found.get().getAuthorised()){
             task task_to_update = task_found.get();
             task_to_update.setAuthorised(true);
+            long millis = System.currentTimeMillis();
+            java.util.Date date = new java.util.Date(millis);
+            task_to_update.setTime_authorised(date.toString());
             taskRepository.save(task_to_update);
+//            ResponseEntity<String> response = createPost(task_to_update,
+//                    "https://fef2-119-74-37-116.ap.ngrok.io/mint");
+//            if (response!=null){
+//                String assest_id = response.getBody();
+//                task_to_update.setAssest_id(assest_id);
+//                taskRepository.save(task_to_update);
+//            }else{
+//                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//            }
+
             return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -50,8 +69,8 @@ public class taskService {
 
     public ResponseEntity<?> getAllpendingRequest(Long requester_id){
         return new ResponseEntity<>(taskRepository
-                .findByCreatedBy_IdEqualsOrValidatedFalseOrAuthorisedFalseOrVerifiedFalse
-                        (requester_id), HttpStatus.OK);
+                .findByCreatedBy_IdEqualsAndVerifiedFalse
+                        (requester_id).stream().map(task -> task.toDto()), HttpStatus.OK);
 
     }
 
@@ -67,11 +86,14 @@ public class taskService {
         task_to_save.setAuthorised(false);
         task_to_save.setAttachments("insert urls");
         task_to_save.setCreatedBy(requesterRepository.findById(requester_id).get());
-        return new ResponseEntity<>(taskRepository.save(task_to_save), HttpStatus.OK);
+        return new ResponseEntity<>(taskRepository.save(task_to_save).toDto(), HttpStatus.OK);
     }
 
     public ResponseEntity<?> unvalidatedRequest(Long requester_id){
-        return new ResponseEntity<>(taskRepository.getByCreatedBy_IdLessThanOrCreatedBy_IdGreaterThanAndValidatedFalse(requester_id,requester_id), HttpStatus.OK);
+        return new ResponseEntity<>(taskRepository.
+                getByCreatedBy_IdLessThanOrCreatedBy_IdGreaterThanAndValidatedFalse
+                        (requester_id,requester_id).stream().map
+                        (task -> task.toDto()), HttpStatus.OK);
 
     }
 
@@ -82,11 +104,18 @@ public class taskService {
         if (task_found!=null
                 && !task_found.get().getValidated()
                 && cso_found!=null
-                && do_found!=null){
+                && do_found!=null
+                && do_found.get().getDesignated_officer()
+                && task_found.get().getCreatedBy().getId() != cso_id
+                && task_found.get().getCreatedBy().getId() != do_id
+                && cso_id != do_id){
             task task_to_update = task_found.get();
             task_to_update.setValidated(true);
             task_to_update.setAuthorisedBy(cso_found.get());
             task_to_update.setValidatedBy(do_found.get());
+            long millis = System.currentTimeMillis();
+            java.util.Date date = new java.util.Date(millis);
+            task_to_update.setTime_validated(date.toString());
             taskRepository.save(task_to_update);
             return new ResponseEntity<>(HttpStatus.OK);
         }
@@ -95,19 +124,33 @@ public class taskService {
 
     public ResponseEntity<?> getAllunverified(){
         return new ResponseEntity<>(taskRepository
-                .findByVerifiedFalseAndAuthorisedTrue(), HttpStatus.OK);
+                .findByVerifiedFalseAndAuthorisedTrue().stream().map(task -> task.toDto()), HttpStatus.OK);
 
     }
 
     public ResponseEntity<?> verifyTask(Long task_id, Long aetos_id){
         Optional<task> task_found = taskRepository.findById(task_id);
         Optional<aetos> aetos_found = aetosRepository.findById(aetos_id);
-        if (task_found!=null && aetos_found!=null ){
+        if (task_found!=null && aetos_found!=null && !task_found.get().getVerified()){
             task task_to_update = task_found.get();
             task_to_update.setVerified(true);
             //task_to_update.setTime_verified(datetime.now());
             task_to_update.setVerifiedBy(aetos_found.get());
+            long millis = System.currentTimeMillis();
+            java.util.Date date = new java.util.Date(millis);
+            task_to_update.setTime_verified(date.toString());
             taskRepository.save(task_to_update);
+
+//            ResponseEntity<String> response = createPost(task_to_update,
+//                    "https://fef2-119-74-37-116.ap.ngrok.io/mint");
+//            if (response!=null){
+//                String assest_id = response.getBody();
+//                task_to_update.setAssest_id(assest_id);
+//                taskRepository.save(task_to_update);
+//            }else{
+//                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//            }
+
             return new ResponseEntity<>(HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -132,7 +175,57 @@ public class taskService {
 
     }
 
+    public ResponseEntity<?> checkBlockChain(Long task_id){
+        Optional<task> task_found = taskRepository.findById(task_id);
+        if (task_found!=null) {
+            String assest_id = task_found.get().getAssest_id();
+            task task_to_send = task_found.get();
+            task_to_send.setAssest_id(null);
+            ResponseEntity<String> response = createPost(task_to_send,
+                    "https://fef2-119-74-37-116.ap.ngrok.io/retrieve/"+assest_id);
+            if (response!=null){
+                Boolean is_in_blockchain = response.getBody().contains("true");
+                if (is_in_blockchain){
+                    return new ResponseEntity<>(HttpStatus.OK);
+                }
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
 
+    public ResponseEntity<String> createPost(Object body, String api) {
+        String url = api;
+
+        // create headers
+        HttpHeaders headers = new HttpHeaders();
+        // set `content-type` header
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        // set `accept` header
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+        // set custom header
+        headers.set("Authorization", "123456");
+
+//        // create a map for post parameters
+//        Map<String, Object> map = new HashMap<>();
+//        map.put("metadatahash", "12345678912345678912345678911111");
+//        map.put("pon_id", "01111111");
+
+        // build the request
+        HttpEntity<Object> entity = new HttpEntity<>(body, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        // send POST request
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+        System.out.println(response);
+        // check response status code
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response;
+        } else {
+            return null;
+        }
+    }
 
 
 

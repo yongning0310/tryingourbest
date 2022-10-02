@@ -68,6 +68,7 @@ public class taskController {
     //aetos
     @GetMapping("unverified")
     public ResponseEntity<?> getAllunverified(){
+
         return taskService.getAllunverified();
     }
 
@@ -84,8 +85,14 @@ public class taskController {
         return taskService.getCSO(do_id,task_id);
     }
 
+    @GetMapping("checkBlockchain/{task_id}")
+    public ResponseEntity<?> checkBlockchain(@PathVariable Long task_id){
+        return taskService.checkBlockChain(task_id);
+    }
+
     // avail CSO ( exclude the DO, requester )
     // include date time
 
 
+    //
 }

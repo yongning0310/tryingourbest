@@ -10,27 +10,20 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import javax.persistence.*;
 import java.util.List;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Data
 @Builder
 @EnableAutoConfiguration
-public class aetos {
+public class aetosDto {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private String username;
 
-    private String password;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "id")
-    private List<task> tasks;
 
-    public aetosDto toDto(){
-        return new aetosDto(this.id,this.username);
-    }
+
 }

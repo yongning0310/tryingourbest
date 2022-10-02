@@ -25,4 +25,6 @@ public class requesterDto {
 
     private Boolean designated_officer;
 
+
+
 }
