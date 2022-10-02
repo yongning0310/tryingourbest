@@ -12,20 +12,14 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
-import java.security.Timestamp;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+
 
 @Service
 @EnableAsync
@@ -43,8 +37,8 @@ public class taskService {
     @Autowired
     private Environment environment;
 
-    String api = environment.getProperty("api");
-    String passwordForAuthorization = environment.getProperty("passwordForAuthorization");
+    String api = "https://8815-119-74-37-116.ap.ngrok.io";
+    String passwordForAuthorization = "123456";
 
 
     public ResponseEntity<?> All(){
