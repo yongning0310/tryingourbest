@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -39,8 +40,11 @@ public class taskService {
     @Autowired
     private aetosRepository aetosRepository;
 
-    String api = "https://8815-119-74-37-116.ap.ngrok.io";
-    String passwordForAuthorization = "123456";
+    @Autowired
+    private Environment environment;
+
+    String api = environment.getProperty("api");
+    String passwordForAuthorization = environment.getProperty("passwordForAuthorization");
 
 
     public ResponseEntity<?> All(){
